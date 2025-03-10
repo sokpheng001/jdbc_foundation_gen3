@@ -17,5 +17,5 @@ public interface Repository<C, I> {
     I save(C c);
     List<C> findAll();
     I delete(I id);
-    I update(I id);
+    I update(I id, C classObject);
 }

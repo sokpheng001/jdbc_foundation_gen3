@@ -6,7 +6,6 @@ import utils.DatabaseConfig;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Dictionary;
 import java.util.List;
 
 public class UserRepository implements Repository<User, Integer> {
@@ -70,11 +69,69 @@ public class UserRepository implements Repository<User, Integer> {
 
     @Override
     public Integer delete(Integer id) {
+        String sql = "DELETE FROM users WHERE id= ?";
+        try(Connection connection = DatabaseConfig.getDataConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);){
+            preparedStatement.setInt(1, id);
+            int rowAffected = preparedStatement.executeUpdate();
+            if(rowAffected>0){
+                System.out.println("[+] User deleted successfully.");
+                return rowAffected;
+            }
+            System.out.println("[!] Deleted user failed.");
+            return rowAffected;
+        }catch ( Exception exception){
+            System.out.println("[!] Error during delete user by id: " + exception.getMessage());
+        }
         return 0;
     }
 
     @Override
-    public Integer update(Integer id) {
+    public Integer update(Integer id, User user) {
+        String sql = """
+                UPDATE users
+                SET user_name = ?, profile = ?
+                WHERE id = ?
+                """;
+        try(Connection connection = DatabaseConfig.getDataConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(sql)){
+            preparedStatement.setString(1, user.getUserName());
+            preparedStatement.setString(2, user.getProfile());
+            preparedStatement.setInt(3, id);
+            int rowAffected = preparedStatement.executeUpdate();
+            if(rowAffected>0){
+                System.out.println("[+] User updated successfully.");
+                return rowAffected;
+            }
+            System.out.println("[!] Updated user failed.");
+            return rowAffected;
+        }catch (Exception exception){
+            System.out.println("[!] Error during update user by id: " + exception.getMessage());
+        }
         return 0;
+    }
+    public User findUserByUuid(String uuid){
+        String sql = "SELECT * FROM users WHERE uuid = ?";
+        try(Connection connection = DatabaseConfig.getDataConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(sql)){
+            preparedStatement.setString(1,uuid);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()){
+                User user = new User();
+                user.setId(resultSet.getInt("id"));
+                user.setUuid(resultSet.getString("uuid"));
+                user.setUserName(resultSet.getString("user_name"));
+                user.setEmail(resultSet.getString("email"));
+                user.setPassword(resultSet.getString("password"));
+                user.setProfile(resultSet.getString("profile"));
+                user.setIsDeleted(resultSet.getBoolean("is_deleted"));
+                user.setCreatedDate(resultSet.getDate("created_date"));
+                return user;
+            }
+
+        }catch (Exception exception){
+            System.out.println("[!] Error during get user by uuid: " + exception.getMessage());
+        }
+        return null;
     }
 }
